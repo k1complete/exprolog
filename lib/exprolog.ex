@@ -15,77 +15,83 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     end
   end
   def make_seed() do
-    List.to_string(:erlang.ref_to_list(:erlang.make_ref()))
+#    "#{:erlang.ref_to_list(:erlang.make_ref())}"
+#    Integer.to_string(String.to_integer(
+    Regex.replace(~r/#Ref<0.0.0.(\d+)>/, 
+                  "#{:erlang.ref_to_list(:erlang.make_ref())}", "\\1") 
+    |> String.to_integer 
+    |> Integer.to_string(36)
   end
   def renaming(x, seed) do
     ff = fn(e) ->
            cond do
              Unification.is_variable(e) -> 
                {:_var, n} = e
-               {:_var, :"#{n}#{seed}"}
+               {:_var, :"#{n}##{seed}"}
              true ->
                e
            end
     end
     walker(x, ff)
   end
-  def_ do_interprete(prog, goalmaster, goal, deliver, mgu) do
-    choose_bind deliver, 
-    fn(d) ->
-      choose_bind prog,
-      fn(p) ->
-        {head, body} = p
-        seed = make_seed()
-        head = renaming(head, seed)
-        body = Enum.map(body, &(renaming(&1, seed)))
-#        IO.inspect([unif: head, d: d, goal: goal])
-        case Unification.unification({head, d}) do
-          {_mgus, true} -> 
-#            IO.inspect [state: fail, mgu: mgu, head: head, d: d]
-            fail()
-          {mgus, false} ->
-#            IO.inspect [unif: :unif, 
-#                        head: head, d: d, mgus: mgus, false: false]
-#            mgu = mgus ++ mgu
-            d0 = deliver -- [d]
-            d0 = body ++ d0
-            d0 = Tool.assignment(d0, mgus)
-            g0 = Tool.assignment(goal, mgus)
-            m0 = Tool.assignment(mgu, mgus) ++ mgus 
-#            IO.inspect [m0: m0]
-            m0 = Tool.folding(m0)
-#            m0 = Enum.filter(m0, fn({k,v}) -> k != v end)
-#            IO.inspect [g0: g0, d0: d0, m0: m0]
-            case (d0) do
-              [] -> 
-                case Unification.unification({goalmaster, g0}) do
-                  {_mgu, true} ->
-#                    IO.inspect [state: :fail, mgu: mgu]
+#  def_ do_interprete(prog, goalmaster, goal, deliver, mgu) do
+  def_ do_interprete(prog, gm, g, de, mg) do
+#    m = fn(f, prog, gm, g, de, mg) ->
+          case de do
+            nil ->
+              values_([status3: true, gm: gm, mgu: mg])
+            [] ->
+              {mgu, false} = Unification.unification({gm, g})
+              values_([status: true, query: gm, goal: g, mgu: mgu])
+            [d|dt] ->
+              choose_bind prog,
+              fn(p) ->
+                {head, body} = p
+                seed = make_seed()
+                head = renaming(head, seed)
+                body = Enum.map(body, &(renaming(&1, seed)))
+                case Unification.unification({d, head}) do
+                  {_mgus, true} -> 
+#                    IO.inspect([___state: false, unif: head, d: d,goal: g, mgu: _mgus])
                     fail()
-                  {mgu, false} ->
-                    values_(pp([status: true, goalmaster: goalmaster,
-                                goal: g0, mgu: mgu]))
+                  {mgus, false} ->
+                    IO.inspect [___unif: d, ___head: head, ___mgu: mgus, deliver: dt, goal: g]
+                    d0 = dt
+                    d0 = body ++ d0
+                    d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
+                    #            IO.inspect [assignment: d0]
+                    g0 = Tool.assignment(g, mgus)
+#                    IO.inspect [___unif: d, ___head: head, ___mgu: mgus, deliver: dt, goal: g]
+#                    IO.inspect [goal_before: g, goal_after: g0, deliver: d0, mgu: mgus]
+#                    IO.inspect([mgu_before: mg, mugs: mgus])
+                    #m0 = Enum.map(mg, &(Tool.assignment(&1, mgus)))
+                    #IO.inspect([mgu_after: m0, mgus: mgus])
+                    m0 =  mgus ++ mg 
+#                    m0 = Enum.filter(m0, fn({k,v}) -> k != v end)
+#                                IO.inspect [m0: m0]
+                    #m0 = Tool.folding(m0)
+                    do_interprete(prog, gm, g0, d0, m0)
+#                    f.(f,prog, gm, g0, d0, m0)
                 end
-              _ -> 
-                do_interprete(prog, goalmaster, g0, d0, m0)
-            end
-        end
-      end
-    end
+              end
+          end
+#    end
+#    m.(m, prog, goalmaster, goal, deliver, mgu)
   end
   def interprete(prog, goal) do
     use_cont
-    IO.inspect [goal: goal]
+#    IO.inspect [goal: goal]
 #    bind_ [deliver: [goal]] do
       do_interprete(prog, goal, goal, [goal], [])
 #    end
   end
   defmacro interprete(goal) do
     p = :ets.match(:prolog, :"$1") |> Enum.map(&(hd(&1)))|> Macro.escape
-    IO.inspect [p: p]
+#    IO.inspect [p: p]
     quote do
       g = defquery(unquote(goal))
-      Macro.escape(Exprolog.interprete(unquote(p), g))
+      #Macro.escape(Exprolog.interprete(unquote(p), g))
+      Exprolog.interprete(unquote(p), g)
     end
   end
   @prolog :prolog
@@ -101,7 +107,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   defmacro defrule(call, clause \\ [ do: nil ]) do
     call = Tool.depp(call)
     body = case clause do
-             [do: {:__block__, [], body}] ->
+             [do: {:__block__, _meta, body}] ->
                Tool.depp(body)
              [do: nil] ->
                []

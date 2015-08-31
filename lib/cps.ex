@@ -85,17 +85,27 @@ defmodule Cps do
     case ppop(@choose_stack) do
       nil ->
         nil # %{result: false, values: result}
-      f -> f.()
+      {f,t} -> 
+#        IO.inspect [pop: f, t: t]
+        f.()
     end
   end
   def do_choise_bind(c, f) do
     case c do 
+      [] ->
+#        IO.inspect [pickfail: c]
+        fail()
       [h|t] -> 
-        if (t) do
-          ppush(@choose_stack, fn() -> do_choise_bind(t, f) end)
+        if (length(t) > 0) do
+#          IO.inspect [choice_bind_push: f, h: h, t: t]
+          ppush(@choose_stack, {fn() -> 
+#                                  IO.inspect [pickfrom: t]
+                                  do_choise_bind(t, f) end, 
+                                t})
         end
         f.(h)
       _ ->
+        IO.inspect [pickfail_error: c]
         fail()
     end
   end

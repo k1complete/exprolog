@@ -9,6 +9,12 @@ defmodule Unification do
 #    IO.inspect [is_variable: _t, state: false]
     false
   end
+  def is_function({:_fun, f, t}) do
+    true
+  end
+  def is_function(t) do
+    false
+  end
   def not_exists(ti, tlist) do
     ff = fn(x) -> 
            case x do
