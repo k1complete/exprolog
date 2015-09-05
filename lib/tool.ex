@@ -1,4 +1,9 @@
 defmodule Tool do
+  defmacro __using__(opt \\ []) do
+    quote do
+      import Tool, unquote(opt)
+    end
+  end
   defmacro pp(a) do
     quote do
       Tool.do_pp(unquote(a))
@@ -8,7 +13,7 @@ defmodule Tool do
 #    {:_var, arg}
       {arg, [], nil}
   end
-  def do_pp({:_fun, :list, arg}) do
+  def do_pp({:_fun, :_list, arg}) do
     pp(arg)
   end
   def do_pp([{k,v}|term]) do
@@ -20,6 +25,13 @@ defmodule Tool do
   def do_pp({:_fun, f, arg}) when is_atom(f) do
 #    {:_fun, f, pp(arg)}
     {f, [], pp(arg)}
+  end
+  def do_pp(x={:_fun, f, arg}) when is_tuple(f) do
+    IO.inspect [x: x] 
+    {pp(f), [], pp(arg)}
+  end
+  def do_pp({:_elixir, x}) do
+    x
   end
   def do_pp(x) do
     x
@@ -66,7 +78,7 @@ defmodule Tool do
     {:_var, f}
   end
   def depp({f, _meta, args}) do
-    {:_fun, f, depp(args)}
+    {:_fun, depp(f), depp(args)}
   end
   def depp(x) do
     x

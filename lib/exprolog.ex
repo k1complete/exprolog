@@ -41,32 +41,45 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
             nil ->
               values_([status3: true, gm: gm, mgu: mg])
             [] ->
-              {mgu, false} = Unification.unification({gm, g})
-              values_([status: true, query: gm, goal: g, mgu: mgu])
+#              case Unification.unification({gm, g}) do
+#                {mgu, false} ->
+                  g = Tool.assignment(gm, Dict.to_list(mg))
+                  values_([status: true, query: gm, goal: g, mgu: mg])
+#              end
             [d|dt] ->
               choose_bind prog,
               fn(p) ->
                 {head, body} = p
                 seed = make_seed()
                 head = renaming(head, seed)
-                body = Enum.map(body, &(renaming(&1, seed)))
                 case Unification.unification({d, head}) do
                   {_mgus, true} -> 
 #                    IO.inspect([___state: false, unif: head, d: d,goal: g, mgu: _mgus])
                     fail()
                   {mgus, false} ->
-                    IO.inspect [___unif: d, ___head: head, ___mgu: mgus, deliver: dt, goal: g]
-                    d0 = dt
-                    d0 = body ++ d0
-                    d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
-                    #            IO.inspect [assignment: d0]
-                    g0 = Tool.assignment(g, mgus)
 #                    IO.inspect [___unif: d, ___head: head, ___mgu: mgus, deliver: dt, goal: g]
-#                    IO.inspect [goal_before: g, goal_after: g0, deliver: d0, mgu: mgus]
-#                    IO.inspect([mgu_before: mg, mugs: mgus])
-                    #m0 = Enum.map(mg, &(Tool.assignment(&1, mgus)))
-                    #IO.inspect([mgu_after: m0, mgus: mgus])
-                    m0 =  mgus ++ mg 
+                    if (body == [:elixir]) do
+#                      IO.inspect [body_before: body, mg: mg, unif: {d, head}]
+                      {d2, head, mg} = Builtin.eval(d, mg)
+#                      IO.inspect [body: body, mg: mg, unif: {d2, head}]
+                      mg2 = Dict.to_list(mg)
+                      d0 = [Tool.assignment(d2, mg2)]
+                      g0 = Tool.assignment(g, mg2)
+#                      IO.inspect [goal: g0, head: head, d: d0]
+                      d0 = dt
+                    else 
+                      body = Enum.map(body, &(renaming(&1, seed)))
+                      d0 = body ++ dt
+                    end
+                    d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
+#                    IO.inspect [assignment: mg]
+                    g0 = Tool.assignment(g, mgus)
+                    mgus = Enum.into(mgus, %{})
+#                    IO.inspect [assignment_mgus: mgus]
+                    mg = Enum.into(mg, %{})
+#                    IO.inspect [assignment_mg: mg]
+                    m0 = Dict.merge(mgus,  mg)
+#                    IO.inspect [assignment: m0]
 #                    m0 = Enum.filter(m0, fn({k,v}) -> k != v end)
 #                                IO.inspect [m0: m0]
                     #m0 = Tool.folding(m0)

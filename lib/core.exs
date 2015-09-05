@@ -1,9 +1,22 @@
 use Exprolog
+deffact :elixir
+defrule x = y do
+  :elixir
+end
 deffact 0
 defrule s(0)
 deffact natural_number(0)
 defrule natural_number(s(x)) do
   natural_number(x)
+end
+defrule le(0, y) do
+  natural_number(y)
+end
+defrule le(s(x), y) do
+  le(x, y)
+end
+defrule plus2(x, y, z) do
+  z = x + y
 end
 defrule plus(0, x, x) do
   natural_number(x)
@@ -24,4 +37,26 @@ end
 deffact append([], y, y)
 defrule append([x|xs], y, [x|zs]) do
   append(xs, y, zs)
+end
+
+defrule member(x, [x|ys])
+defrule member(x, [y|ys]) do
+  member(x, ys)
+end
+defrule ak(0,n,s(n))
+defrule ak(s(x),0,a) do
+  ak(x, s(0), a)
+end
+defrule ak(s(m), s(n), a) do
+  ak(s(m), n, a1)
+  ak(m, a1, a)
+end
+defrule select(x, [x|xs], xs)
+defrule select(x, [y|xs], [y|ys]) do
+  select(x, xs, ys)
+end
+defrule permutation([], [])
+defrule permutation(xs, [x|ys]) do
+  select(x, xs, zs)
+  permutation(zs, ys)
 end

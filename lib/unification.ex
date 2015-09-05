@@ -66,7 +66,7 @@ defmodule Unification do
   end
   def trans(t1) do
     case is_list(t1) do
-      true -> {:_fun, :list, t1}
+      true -> {:_fun, :_list, t1}
       false -> t1
     end
   end
@@ -93,7 +93,7 @@ defmodule Unification do
         ret
       true ->
         case iis_function(t1, t2) do
-          {:list, [th1|tl1], [th2|tl2]} ->
+          {:_list, [th1|tl1], [th2|tl2]} ->
             s = [{th1, th2}, {tl1, tl2} | s]
           {_f, tt1, tt2} ->
             s = [{tt1, tt2}|s]
