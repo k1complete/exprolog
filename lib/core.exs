@@ -5,24 +5,21 @@ defrule x = y do
   :elixir
 end
 defrule x == x
-defrule x > y do
-  :elixir
-end
 deffact assert(x1, x1)
 defrule gt(x, y) do
-  z = x < y
-  true == z
-end
-defrule ge(x, y) do
-  z = x <= y
-  true == z
-end
-defrule le(x, y) do
   z = x > y
   true == z
 end
-defrule lt(x, y) do
+defrule ge(x, y) do
   z = x >= y
+  true == z
+end
+defrule le(x, y) do
+  z = x <= y
+  true == z
+end
+defrule lt(x, y) do
+  z = x < y
   true == z
 end
 
