@@ -1,22 +1,42 @@
 use Exprolog
+deffact true
 deffact :elixir
 defrule x = y do
   :elixir
 end
+defrule x == x
+defrule x > y do
+  :elixir
+end
+deffact assert(x1, x1)
+defrule gt(x, y) do
+  z = x < y
+  true == z
+end
+defrule ge(x, y) do
+  z = x <= y
+  true == z
+end
+defrule le(x, y) do
+  z = x > y
+  true == z
+end
+defrule lt(x, y) do
+  z = x >= y
+  true == z
+end
+
 deffact 0
 defrule s(0)
 deffact natural_number(0)
 defrule natural_number(s(x)) do
   natural_number(x)
 end
-defrule le(0, y) do
-  natural_number(y)
-end
-defrule le(s(x), y) do
-  le(x, y)
-end
 defrule plus2(x, y, z) do
   z = x + y
+end
+defrule minus2(x, y, z) do
+  z = x - y
 end
 defrule plus(0, x, x) do
   natural_number(x)

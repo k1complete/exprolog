@@ -17,8 +17,21 @@ defmodule Builtin do
     end
   end
 
+  def eval(exp = {:_fun, :>, [left, right]}, mgu) do
+    IO.inspect [left: left, right: right]
+    mguv = Enum.map(mgu, fn({{:_var, x}, v}) -> {x, v} end)
+#   IO.inspect [right2: Tool.pp(right), mgu: mguv]
+#    IO.inspect [eval: Tool.pp(right), mgu: mguv]
+    {s, _m} = Code.eval_quoted(Tool.pp(exp), mguv)
+    IO.inspect [eval: s, m: _m]
+    if (s != true) do
+      {s, nil, mgu}
+    else
+      {s, s, mgu}
+    end
+  end
   def eval({:_fun, :=, [left, right]}, mgu) do
-    IO.inspect [right: right]
+#    IO.inspect [right: right]
     mguv = Enum.map(mgu, fn({{:_var, x}, v}) -> {x, v} end)
 #   IO.inspect [right2: Tool.pp(right), mgu: mguv]
 #    IO.inspect [eval: Tool.pp(right), mgu: mguv]

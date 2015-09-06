@@ -61,18 +61,17 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                     if (body == [:elixir]) do
 #                      IO.inspect [body_before: body, mg: mg, unif: {d, head}]
                       {d2, head, mg} = Builtin.eval(d, mg)
-#                      IO.inspect [body: body, mg: mg, unif: {d2, head}]
+#                      IO.inspect [body: body, mg: mg, unif: {d2, head}, dt: dt]
                       mg2 = Dict.to_list(mg)
-                      d0 = [Tool.assignment(d2, mg2)]
+                      dt = Tool.assignment(dt, mg2)
                       g0 = Tool.assignment(g, mg2)
-#                      IO.inspect [goal: g0, head: head, d: d0]
                       d0 = dt
                     else 
                       body = Enum.map(body, &(renaming(&1, seed)))
                       d0 = body ++ dt
                     end
                     d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
-#                    IO.inspect [assignment: mg]
+#                    IO.inspect [assignment_d0: d0, mgus: mgus, mg2: mg2]
                     g0 = Tool.assignment(g, mgus)
                     mgus = Enum.into(mgus, %{})
 #                    IO.inspect [assignment_mgus: mgus]
