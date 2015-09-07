@@ -45,7 +45,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
 #                {mgu, false} ->
                   g = Tool.assignment(gm, Dict.to_list(mg))
                   mg2 = Tool.folding(mg)
-                  values_([status2: true, query: gm, goal: g, mgu: mg2])
+                  values_([status: true, query: gm, goal: g, mgu: mg2])
 #              end
             [d|dt] ->
               choose_bind prog,
