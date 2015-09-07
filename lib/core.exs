@@ -22,6 +22,21 @@ defrule lt(x, y) do
   z = x < y
   true == z
 end
+defrule ak2(0, n, a) do
+  a = n + 1
+end
+defrule ak2(sx, 0, a) do
+  x = sx - 1
+  ak2(x, 1, a)
+end
+defrule ak2(sm, sn, a) do
+  gt(sm, 0)
+  gt(sn, 0)
+  m = sm - 1
+  n = sn - 1
+  ak2(sm, n, a1)
+  ak2(m, a1, a)
+end
 
 deffact 0
 defrule s(0)

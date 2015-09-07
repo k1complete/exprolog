@@ -44,7 +44,8 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
 #              case Unification.unification({gm, g}) do
 #                {mgu, false} ->
                   g = Tool.assignment(gm, Dict.to_list(mg))
-                  values_([status: true, query: gm, goal: g, mgu: mg])
+                  mg2 = Tool.folding(mg)
+                  values_([status2: true, query: gm, goal: g, mgu: mg2])
 #              end
             [d|dt] ->
               choose_bind prog,

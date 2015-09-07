@@ -111,9 +111,10 @@ defmodule Tool do
     walker(x, ff)
   end
   def folding(m) do
-    Enum.map(m, fn({k, v}) ->
+    m2 = Dict.to_list(m)
+    Enum.map(m2, fn({k, v}) ->
 #                  IO.inspect([__folding: {k, v}])
-                  {k, assignment(v, m)}
+                  {k, assignment(v, m2)}
              end) |>
       Enum.filter(fn({k, v}) ->
                     if (k == v) do
