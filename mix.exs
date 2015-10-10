@@ -4,7 +4,7 @@ defmodule Exlog.Mixfile do
   def project do
     [app: :exlog,
      version: "0.0.1",
-     elixir: "~> 1.1-dev",
+     elixir: "~> 1.1.0-beta",
      deps: deps]
   end
 

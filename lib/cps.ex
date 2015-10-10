@@ -85,7 +85,7 @@ defmodule Cps do
     case ppop(@choose_stack) do
       nil ->
         nil # %{result: false, values: result}
-      {f,t} -> 
+      {f,_t} -> 
 #        IO.inspect [pop: f, t: t]
         f.()
     end

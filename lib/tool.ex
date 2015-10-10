@@ -83,10 +83,24 @@ defmodule Tool do
   def depp(x) do
     x
   end
+  def replace_mgu(mgu, x, mmgu) when is_map(mgu) do
+    case mgu[x] do
+      nil -> x
+      v -> 
+        cond do
+          Unification.is_variable(v) ->
+            replace_mgu(mmgu, v, mmgu)
+          Unification.is_function(v) ->
+            assignment(v, mmgu)
+          true ->
+            v
+        end
+    end
+  end
   def replace_mgu([], x, _mgu) do
     x
   end
-  def replace_mgu([{x,v}|mt], x, mgu) do
+  def replace_mgu([{x,v}|_mt], x, mgu) do
 #    IO.inspect [replace_mgu: x, v: v]
     cond do
       (Unification.is_variable(v)) ->
@@ -99,7 +113,7 @@ defmodule Tool do
         v
     end
   end
-  def replace_mgu([mh|mt], x, mgu) do
+  def replace_mgu([_mh|mt], x, mgu) do
     replace_mgu(mt, x, mgu)
   end
   def assignment(x, mgu) do
@@ -111,10 +125,10 @@ defmodule Tool do
     walker(x, ff)
   end
   def folding(m) do
-    m2 = Dict.to_list(m)
-    Enum.map(m2, fn({k, v}) ->
+#    m2 = Dict.to_list(m)
+    Enum.map(m, fn({k, v}) ->
 #                  IO.inspect([__folding: {k, v}])
-                  {k, assignment(v, m2)}
+                  {k, assignment(v, m)}
              end) |>
       Enum.filter(fn({k, v}) ->
                     if (k == v) do
