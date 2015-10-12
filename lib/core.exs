@@ -92,3 +92,21 @@ defrule permutation(xs, [x|ys]) do
   select(x, xs, zs)
   permutation(zs, ys)
 end
+
+defrule partition([], m, [], [])
+defrule partition([h|t], m, [h|left], right) do
+  le(h, m)
+  partition(t, m, left, right)
+end
+defrule partition([h|t], m, left, [h|right]) do
+  gt(h, m)
+  partition(t, m, left, right)
+end
+defrule sort([], [])
+defrule sort([h|a], b) do
+  partition(a, h, left, right)
+  sort(left, sleft)
+  sort(right, sright)
+  append(sleft, [h| sright], b)
+end
+defrule append_dl([xs, ys], [ys, zs], [xs, zs])

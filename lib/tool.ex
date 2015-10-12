@@ -36,7 +36,33 @@ defmodule Tool do
   def do_pp(x) do
     x
   end
-
+  def walker2([], _ff, ac) do
+    {[], ac}
+  end
+  def walker2({:_fun, f, args}, ff, ac) do
+    {nargs, nac} = walker2(args, ff, ac)
+    {{:_fun, f, nargs}, nac}
+  end
+  def walker2({:_var, a}, ff, ac) do
+    ff.({:_var, a}, ac)
+  end
+  def walker2([h|t], ff, ac) do
+    {a, hac}  = walker2(h, ff, ac)
+    {b, tac} = walker2(t, ff, hac)
+    {[a|b], tac}
+  end
+  def walker2(tuple, ff, ac) when is_tuple(tuple) do
+    {wlist, wac} = walker2(Tuple.to_list(tuple), ff, ac)
+    {List.to_tuple(wlist), wac}
+  end
+  def walker2(a, ff, ac) when is_atom(a) do
+    r = ff.(a, ac)
+    r
+  end
+  def walker2(a, _ff, ac) do
+#    IO.inspect [nothing: [arg: a]]
+    {a, ac}
+  end
   def walker([], _ff) do
     []
   end

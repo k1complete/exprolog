@@ -34,51 +34,74 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     end
     walker(x, ff)
   end
+  @doc """
+  prog: rule list
+  gm: original query goal
+  g: current sub goal list
+  de: derivered clauses by 
+  cp: choose point
+  """
   def_ do_interprete(prog, gm, g, de, mg) do
+#    IO.inspect [g: g, de: de]
     case de do
       nil ->
         values_([status3: true, gm: gm, mgu: mg])
       [] ->
+        {_, v} = Tool.walker2(gm, 
+                         fn ({:_var, _a} = arg, ac) -> 
+                           {arg, Set.put(ac, arg)}
+                            (v2, ac) ->
+                           {v2, ac}
+                         end, MapSet.new())
         g = Tool.assignment(gm, Dict.to_list(mg))
-        mg2 = Tool.folding(mg)
+        mg2 = Enum.into(Tool.folding(mg), %{})
+        v = Enum.map(v, &{elem(&1, 1), Dict.get(mg2, &1)})
         values_([status: true, query: Tool.pp(gm), 
-                 goal: Tool.pp(g), mgu: Tool.pp(mg2)])
+                 answer: Tool.pp(v),
+                 goal: Tool.pp(g)])
       [d|dt] ->
-        choose_bind prog,
-        fn(p) ->
-          {head, body} = p
-          seed = make_seed()
-          head = renaming(head, seed)
-          case Unification.unification({d, head}) do
-            {_mgus, true} -> 
-              fail()
-            {mgus, false} ->
-              if (body == [:elixir]) do
-                {_d2, _head, mg} = Builtin.eval(d, mg)
-#                mg2 = Dict.to_list(mg)
-                dt = Tool.assignment(dt, mg)
-                d0 = dt
-              else 
-                body = Enum.map(body, &(renaming(&1, seed)))
-                d0 = body ++ dt
-              end
-              d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
-              g0 = Tool.assignment(g, mgus)
-              mgus = Enum.into(mgus, %{})
-              mg = Enum.into(mg, %{})
-              m0 = Dict.merge(mgus,  mg)
-              do_interprete(prog, gm, g0, d0, m0)
+          choose_bind prog,
+          fn(p) ->
+            {head, body} = p
+            seed = make_seed()
+            head = renaming(head, seed)
+            case Unification.unification({d, head}) do
+              {_mgus, true} -> 
+#                IO.inspect [unif: false, d: d, head: head]
+                fail()
+              {mgus, false} ->
+#                IO.inspect [unif: true, d: d, head: head, mgus: mgus]
+                if (body == [:elixir]) do
+                  {_d2, _head, mg} = Builtin.eval(d, mg)
+                  #                mg2 = Dict.to_list(mg)
+#                  IO.inspect [prog: {head, body}, d: d, mg: mg, d2: d2]
+                  dt = Tool.assignment(dt, mg)
+#                  IO.inspect [dt: dt]
+                  d0 = dt
+                else 
+                  body = Enum.map(body, &(renaming(&1, seed)))
+                  d0 = body ++ dt
+                end
+                d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
+                g0 = Tool.assignment(g, mgus)
+                mgus = Enum.into(mgus, %{})
+                mg = Enum.into(mg, %{})
+                m0 = Dict.merge(mgus,  mg)
+                do_interprete(prog, gm, g0, d0, m0)
+            end
           end
-        end
     end
   end
   def interprete(prog, goal, bind) do
     use_cont
     goal2 = Tool.assignment(goal, bind)
     IO.inspect [A: Tool.pp(goal2)]
-    do_interprete(prog, goal2, goal, [goal], [])
+    do_interprete(prog, goal2, goal2, [goal2], [])
   end
   defmacro interprete(goal, bind \\ []) do
+    bind = Enum.map(bind, fn({k,v}) ->
+                            {{:_var, k}, v} 
+                    end)
     p = :ets.match(:prolog, :"$1") |> Enum.map(&(hd(&1)))|> Macro.escape
 #    IO.inspect [p: p]
     quote  do
