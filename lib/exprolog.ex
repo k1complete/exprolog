@@ -41,7 +41,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   de: derivered clauses by 
   cp: choose point
   """
-  def_ do_interprete(prog, gm, g, de, mg) do
+  def_ do_interprete(prog, gm, g, de, mg, cp) do
 #    IO.inspect [g: g, de: de]
     case de do
       nil ->
@@ -60,34 +60,61 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                  answer: Tool.pp(v),
                  goal: Tool.pp(g)])
       [d|dt] ->
-          choose_bind prog,
+        choose_bind prog,
           fn(p) ->
             {head, body} = p
             seed = make_seed()
             head = renaming(head, seed)
             case Unification.unification({d, head}) do
               {_mgus, true} -> 
+                case d do
+                  {:_fun, :cut, []} ->
+                    IO.inspect [dt: dt, body: body]
+                    cph = []
+                    case cp do
+                      [cph | cpt] ->
+                        cp = cpt
+                        Cps.set_choose_stack(cph)
+                      [] ->
+                        Cps.set_choose_stack([])
+                        cp = []
+                    end
+                    IO.inspect "cut!!!!\n"
+                    d0 = dt
+                    IO.inspect [cp: cph, dt: dt, g: g]
+                    do_interprete(prog, gm, g, d0, mg, cp)
+                  {:_fun, :fail, []} ->
+                    IO.inspect [s: "fail!!!!\n", d: d, dt: dt]
+#                    fail()
+                    values_([status: false, query: Tool.pp(gm), 
+                             answer: [],
+                             goal: Tool.pp(g)])
+                  _ ->
+                    IO.inspect [fail_: d, head: head]
+                    fail()
+                end
 #                IO.inspect [unif: false, d: d, head: head]
-                fail()
               {mgus, false} ->
-#                IO.inspect [unif: true, d: d, head: head, mgus: mgus]
-                if (body == [:elixir]) do
-                  {_d2, _head, mg} = Builtin.eval(d, mg)
+                cp = save_choose_point(cp, {:_fun, :cut, []})
+                # IO.inspect [unif: true, d: d, head: head, mgus: mgus]
+                case body do
+                  [:elixir] ->
+                    {_d2, _head, mg} = Builtin.eval(d, mg)
                   #                mg2 = Dict.to_list(mg)
-#                  IO.inspect [prog: {head, body}, d: d, mg: mg, d2: d2]
-                  dt = Tool.assignment(dt, mg)
+                  IO.inspect [prog: {head, body}, d: d, mg: mg, d2: _d2]
+                    dt = Tool.assignment(dt, mg)
 #                  IO.inspect [dt: dt]
-                  d0 = dt
-                else 
-                  body = Enum.map(body, &(renaming(&1, seed)))
-                  d0 = body ++ dt
+                    d0 = dt
+                  _ ->
+                    body = Enum.map(body, &(renaming(&1, seed)))
+                    d0 = body ++ dt
                 end
                 d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
                 g0 = Tool.assignment(g, mgus)
                 mgus = Enum.into(mgus, %{})
                 mg = Enum.into(mg, %{})
                 m0 = Dict.merge(mgus,  mg)
-                do_interprete(prog, gm, g0, d0, m0)
+                do_interprete(prog, gm, g0, d0, m0, cp)
             end
           end
     end
@@ -95,8 +122,8 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   def interprete(prog, goal, bind) do
     use_cont
     goal2 = Tool.assignment(goal, bind)
-    IO.inspect [A: Tool.pp(goal2)]
-    do_interprete(prog, goal2, goal2, [goal2], [])
+    IO.inspect [A: Tool.pp(goal2), prog: prog]
+    do_interprete(prog, goal2, goal2, [goal2], [], [])
   end
   defmacro interprete(goal, bind \\ []) do
     bind = Enum.map(bind, fn({k,v}) ->
@@ -108,6 +135,18 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
       g = defquery(unquote(goal))
       #Macro.escape(Exprolog.interprete(unquote(p), g))
       Exprolog.interprete(unquote(p), g, unquote(bind))
+    end
+  end
+  def save_choose_point(cp, pred) do
+    case Cps.get_choose_stack() do
+      [{_f,bodies},_dt|ct] ->
+        if (Enum.find(bodies, &(&1 == pred))) do
+          [ct|cp]
+        else
+          cp
+        end
+      _ ->
+        cp
     end
   end
   @prolog :prolog

@@ -80,7 +80,12 @@ defmodule Cps do
     end
   end
   @choose_stack :choose
-
+  def get_choose_stack() do
+    Process.get(@choose_stack)
+  end
+  def set_choose_stack(s) do
+    Process.put(@choose_stack, s)
+  end
   def fail(_result \\ nil) do
     case ppop(@choose_stack) do
       nil ->
