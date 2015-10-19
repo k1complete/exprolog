@@ -12,6 +12,11 @@ defrule ticket(a, m) do
   m = 500
   cut()
 end
-defrule ticket(b, m) do
+defrule ticket(a, m) do
+  le(a, 15)
   m = 1000
 end
+defrule ticket(a, m) do
+  m = 2000
+end
+

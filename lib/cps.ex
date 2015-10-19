@@ -74,6 +74,7 @@ defmodule Cps do
     case Process.get(name, []) do
       [] -> nil
       x ->
+#        IO.inspect [ppop: x]
         {r, s} = Stack.pop(x)
         Process.put(name, s)
         r
@@ -90,9 +91,9 @@ defmodule Cps do
     case ppop(@choose_stack) do
       nil ->
         nil # %{result: false, values: result}
-      {f,_t} -> 
+      {f,t} -> 
 #        IO.inspect [pop: f, t: t]
-        f.()
+        f.(t)
     end
   end
   def do_choise_bind(c, f) do
@@ -103,9 +104,9 @@ defmodule Cps do
       [h|t] -> 
         if (length(t) > 0) do
 #          IO.inspect [choice_bind_push: f, h: h, t: t]
-          ppush(@choose_stack, {fn() -> 
+          ppush(@choose_stack, {fn(x) -> 
 #                                  IO.inspect [pickfrom: t]
-                                  do_choise_bind(t, f) end, 
+                                  do_choise_bind(x, f) end, 
                                 t})
         end
         f.(h)

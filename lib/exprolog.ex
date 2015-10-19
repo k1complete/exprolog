@@ -69,11 +69,12 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
               {_mgus, true} -> 
                 case d do
                   {:_fun, :cut, []} ->
-                    IO.inspect [dt: dt, body: body]
+                    IO.inspect [dt: dt, body: body, cp: cp]
                     cph = []
                     case cp do
                       [cph | cpt] ->
                         cp = cpt
+                        IO.inspect [set_stack: cph]
                         Cps.set_choose_stack(cph)
                       [] ->
                         Cps.set_choose_stack([])
@@ -90,12 +91,13 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                              answer: [],
                              goal: Tool.pp(g)])
                   _ ->
-                    IO.inspect [fail_: d, head: head]
+#                    IO.inspect [fail_: d, head: head, cp: cp]
                     fail()
                 end
 #                IO.inspect [unif: false, d: d, head: head]
               {mgus, false} ->
-                cp = save_choose_point(cp, {:_fun, :cut, []})
+                cp = save_choose_point(p,cp, {:_fun, :cut, []})
+#                IO.inspect [save: cp, dt: dt, body: body]
                 # IO.inspect [unif: true, d: d, head: head, mgus: mgus]
                 case body do
                   [:elixir] ->
@@ -137,22 +139,28 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
       Exprolog.interprete(unquote(p), g, unquote(bind))
     end
   end
-  def save_choose_point(cp, pred) do
-    case Cps.get_choose_stack() do
-      [{_f,bodies},_dt|ct] ->
-        if (Enum.find(bodies, &(&1 == pred))) do
-          [ct|cp]
-        else
+  def save_choose_point({head, body}, cp, pred) do
+    scp = Cps.get_choose_stack()
+    IO.inspect [scp: scp, pred: pred, head: head, body: body]
+    if (Enum.find(body, &(&1 == pred))) do
+      case Cps.get_choose_stack() do
+        [{f,dt}|rest] ->
+#        IO.inspect [f: f, bh: bh, pred: pred]
+          ct = Enum.filter(dt, fn({h, b}) -> h != head end)
+          dp = Enum.filter(dt, fn({h, b}) -> h == head end)
+          IO.inspect [save_cp: ct, discard_point: dp, scp: scp]
+          [[{f,ct}|rest]|  cp]
+        _ ->
           cp
-        end
-      _ ->
-        cp
+      end
+    else
+      cp
     end
   end
   @prolog :prolog
   def register_rule(ets, term) do
     m = try do
-          :ets.new(ets, [:ordered_set, :public, :named_table])
+          :ets.new(ets, [:duplicate_bag, :public, :named_table])
           rescue 
           ArgumentError ->
             ets
