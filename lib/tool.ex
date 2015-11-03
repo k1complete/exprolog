@@ -97,10 +97,7 @@ defmodule Tool do
   def parse([h|t]) do
     [parse(h)|parse(t)]
   end
-  def parse({f, _meta, nil}) do
-    {:_var, "#{f}"}
-  end
-  def parse({f, _meta, atom}) when is_atom(atom) do
+  def parse({f, _meta, atom}) when is_atom(atom) or is_nil(atom) do
     {:_var, "#{f}"}
   end
   def parse({f, _meta, args}) do

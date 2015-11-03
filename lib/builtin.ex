@@ -23,7 +23,7 @@ defmodule Builtin do
 #   IO.inspect [right2: Tool.pp(right), mgu: mguv]
 #    IO.inspect [eval: Tool.pp(right), mgu: mguv]
     {s, _m} = Code.eval_quoted(Tool.pp(exp), mguv)
-    IO.inspect [eval: s, m: _m]
+#    IO.inspect [eval: s, m: _m]
     if (s != true) do
       {s, nil, mgu}
     else
@@ -32,9 +32,9 @@ defmodule Builtin do
   end
   def eval({:_fun, :=, [left, right]}, mgu) do
 #    IO.inspect [right: right]
-    {s, mmgu} = Macro.prewalk(right, 
+    {_s, mmgu} = Macro.prewalk(right, 
                               [], 
-                              fn (t = {v, m, nil}, a) ->
+                              fn (t = {v, _m, nil}, a) ->
                                 case Map.get(mgu, {:_var, "#{v}"}) do
                                   nil ->
                                     {t, a}

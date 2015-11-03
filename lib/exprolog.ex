@@ -147,14 +147,14 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     end
   end
   def save_choose_point({head, body}, cp, pred) do
-    scp = Cps.get_choose_stack()
+#    scp = Cps.get_choose_stack()
 #    IO.inspect [scp: scp, pred: pred, head: head, body: body]
     if (Enum.find(body, &(&1 == pred))) do
       case Cps.get_choose_stack() do
         [{f,dt}|rest] ->
 #        IO.inspect [f: f, bh: bh, pred: pred]
-          ct = Enum.filter(dt, fn({h, b}) -> h != head end)
-          dp = Enum.filter(dt, fn({h, b}) -> h == head end)
+          ct = Enum.filter(dt, fn({h, _b}) -> h != head end)
+#          dp = Enum.filter(dt, fn({h, _b}) -> h == head end)
 #          IO.inspect [save_cp: ct, discard_point: dp, scp: scp]
           [[{f,ct}|rest]|  cp]
         _ ->

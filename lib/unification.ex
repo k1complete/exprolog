@@ -155,7 +155,7 @@ defmodule Unification do
             IO.inspect tt1: tt1, tt2: tt2, s: 4, ret: ret
             ret
           _x ->
-            IO.inspect [x: _x, t1: t1, t2: t2]
+#            IO.inspect [x: _x, t1: t1, t2: t2]
             nil
         end
     end
