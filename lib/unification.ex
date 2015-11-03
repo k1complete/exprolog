@@ -1,6 +1,6 @@
 defmodule Unification do
   import Tool;
-  def is_variable({:_var, t}) when is_atom(t) do
+  def is_variable({:_var, t}) when is_binary(t) do
 #    IO.inspect [is_variable: t]
 #    Regex.match?(~r/^[A-Z].*/, Atom.to_string(t))
     true
@@ -100,7 +100,7 @@ defmodule Unification do
 #            IO.inspect [iis_function: s]
             s
           _x -> 
-#            IO.inspect [x: x, s: s, failure: true]
+#            IO.inspect [x: _x, s: s, t1: t1, t2: t2, failure: true]
             failure = true
         end
     end
@@ -116,4 +116,49 @@ defmodule Unification do
 #    IO.inspect [fun: :uification, ret: ret, status: status]
     {ret, status}
   end
+  def unification_old({t1, t2}) do
+    case unify(t1, t2, []) do
+      nil ->
+        {[], true}
+      ret ->
+        {ret, false}
+    end
+  end
+  def unify(_t1, _t2, nil) do
+    nil
+  end
+  def unify(t1, t2, ret) do
+    t1 = trans(t1)
+    t2 = trans(t2)
+    cond do
+      is_variable(t1) and not_exists(t1, t2) ->
+        IO.inspect t1: t1, t2: t2, s: 1
+        ret = replace_do(ret, t1, t2)
+        [{t1, t2}|ret]
+      is_variable(t2) and not_exists(t2, t1) ->
+        IO.inspect t1: t1, t2: t2, s: 2, ret: ret
+        ret = replace_do(ret, t2, t1)
+        IO.inspect t1: t1, t2: t2, s: 2.5, ret: ret
+        [{t2, t1}|ret]
+      t1 === t2 ->
+        IO.inspect t1: t1, t2: t2, s: 3
+        ret
+      true ->
+        case iis_function(t1, t2) do
+          {:_list, [th1|tl1], [th2|tl2]} ->
+            IO.inspect t1: t1, t2: t2, s: 5, ret: ret
+            ret = unify(th1, th2, ret)
+            IO.inspect t1: tl1, t2: tl2, s: 6, ret: ret
+            ret = unify(tl1, tl2, ret)
+          {_f, tt1, tt2} ->
+            ret = unify(tt1, tt2, ret)
+            IO.inspect tt1: tt1, tt2: tt2, s: 4, ret: ret
+            ret
+          _x ->
+            IO.inspect [x: _x, t1: t1, t2: t2]
+            nil
+        end
+    end
+  end
+
 end

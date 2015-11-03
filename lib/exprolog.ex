@@ -15,19 +15,23 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     end
   end
   def make_seed() do
+    use Bitwise
 #    "#{:erlang.ref_to_list(:erlang.make_ref())}"
 #    Integer.to_string(String.to_integer(
-    Regex.replace(~r/#Ref<0.0.0.(\d+)>/, 
-                  "#{:erlang.ref_to_list(:erlang.make_ref())}", "\\1") 
-    |> String.to_integer 
-    |> Integer.to_string(36)
+    m = Regex.named_captures(~r/#Ref<(?<a>\d+).(?<b>\d+).(?<c>\d+).(?<d>\d+)>/, 
+                  "#{:erlang.ref_to_list(:erlang.make_ref())}", [])
+    s = (String.to_integer(m["a"]) <<< (18*3)) + 
+        (String.to_integer(m["b"]) <<< (18*2)) + 
+        (String.to_integer(m["c"]) <<< 18) + 
+        String.to_integer(m["d"])
+    Integer.to_string(s, 36)
   end
   def renaming(x, seed) do
     ff = fn(e) ->
            cond do
              Unification.is_variable(e) -> 
                {:_var, n} = e
-               {:_var, :"#{n}##{seed}"}
+               {:_var, "#{n}##{seed}"}
              true ->
                e
            end
@@ -65,16 +69,18 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
             {head, body} = p
             seed = make_seed()
             head = renaming(head, seed)
+#            IO.inspect [unif_before: d]
             case Unification.unification({d, head}) do
               {_mgus, true} -> 
+#                IO.inspect [unif: d, dt: dt, head: head, body: body]
                 case d do
                   {:_fun, :cut, []} ->
-                    IO.inspect [dt: dt, body: body, cp: cp]
+#                    IO.inspect [dt: dt, body: body, cp: cp]
                     cph = []
                     case cp do
                       [cph | cpt] ->
                         cp = cpt
-                        IO.inspect [set_stack: cph]
+#                        IO.inspect [set_stack: cph]
                         Cps.set_choose_stack(cph)
                       [] ->
                         Cps.set_choose_stack([])
@@ -86,29 +92,29 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                     do_interprete(prog, gm, g, d0, mg, cp)
                   {:_fun, :fail, []} ->
                     IO.inspect [s: "fail!!!!\n", d: d, dt: dt]
-#                    fail()
-                    values_([status: false, query: Tool.pp(gm), 
-                             answer: [],
-                             goal: Tool.pp(g)])
+                    fail()
+#                    values_([status: false, query: Tool.pp(gm), 
+#                             answer: [],
+#                             goal: Tool.pp(g)])
                   _ ->
 #                    IO.inspect [fail_: d, head: head, cp: cp]
                     fail()
                 end
-#                IO.inspect [unif: false, d: d, head: head]
               {mgus, false} ->
                 cp = save_choose_point(p,cp, {:_fun, :cut, []})
+#                IO.inspect [unif: true, d: d, head: head, mgus: mgus]
 #                IO.inspect [save: cp, dt: dt, body: body]
-                # IO.inspect [unif: true, d: d, head: head, mgus: mgus]
                 case body do
                   [:elixir] ->
+#                    IO.inspect [prog: {head, body}, d: d]
                     {_d2, _head, mg} = Builtin.eval(d, mg)
                   #                mg2 = Dict.to_list(mg)
-                  IO.inspect [prog: {head, body}, d: d, mg: mg, d2: _d2]
                     dt = Tool.assignment(dt, mg)
 #                  IO.inspect [dt: dt]
                     d0 = dt
                   _ ->
                     body = Enum.map(body, &(renaming(&1, seed)))
+#                    IO.inspect [rename: {head, body}]
                     d0 = body ++ dt
                 end
                 d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
@@ -116,6 +122,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                 mgus = Enum.into(mgus, %{})
                 mg = Enum.into(mg, %{})
                 m0 = Dict.merge(mgus,  mg)
+#                IO.inspect [pre_do: d0, m0: m0]
                 do_interprete(prog, gm, g0, d0, m0, cp)
             end
           end
@@ -124,7 +131,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   def interprete(prog, goal, bind) do
     use_cont
     goal2 = Tool.assignment(goal, bind)
-    IO.inspect [A: Tool.pp(goal2), prog: prog]
+#    IO.inspect [A: Tool.pp(goal2), prog: prog]
     do_interprete(prog, goal2, goal2, [goal2], [], [])
   end
   defmacro interprete(goal, bind \\ []) do
@@ -141,14 +148,14 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   end
   def save_choose_point({head, body}, cp, pred) do
     scp = Cps.get_choose_stack()
-    IO.inspect [scp: scp, pred: pred, head: head, body: body]
+#    IO.inspect [scp: scp, pred: pred, head: head, body: body]
     if (Enum.find(body, &(&1 == pred))) do
       case Cps.get_choose_stack() do
         [{f,dt}|rest] ->
 #        IO.inspect [f: f, bh: bh, pred: pred]
           ct = Enum.filter(dt, fn({h, b}) -> h != head end)
           dp = Enum.filter(dt, fn({h, b}) -> h == head end)
-          IO.inspect [save_cp: ct, discard_point: dp, scp: scp]
+#          IO.inspect [save_cp: ct, discard_point: dp, scp: scp]
           [[{f,ct}|rest]|  cp]
         _ ->
           cp
@@ -168,14 +175,14 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     :ets.insert(m,term)
   end
   defmacro defrule(call, clause \\ [ do: nil ]) do
-    call = Tool.depp(call)
+    call = Tool.parse(call)
     body = case clause do
              [do: {:__block__, _meta, body}] ->
-               Tool.depp(body)
+               Tool.parse(body)
              [do: nil] ->
                []
              [do: exp] ->
-               Tool.depp([exp])
+               Tool.parse([exp])
            end
 #    IO.inspect [call: call, clause: body]
     Macro.escape(register_rule(@prolog, {call, body}))
@@ -189,7 +196,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     s = quote do
       unquote(call)
     end
-    m = Tool.depp(s)
+    m = Tool.parse(s)
     Macro.escape(m)
   end
   def test_prog do

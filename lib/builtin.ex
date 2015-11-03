@@ -16,14 +16,14 @@ defmodule Builtin do
       _ -> {true, mgu}
     end
   end
-
+  
   def eval(exp = {:_fun, :>, [left, right]}, mgu) do
     IO.inspect [left: left, right: right]
     mguv = Enum.map(mgu, fn({{:_var, x}, v}) -> {x, v} end)
 #   IO.inspect [right2: Tool.pp(right), mgu: mguv]
 #    IO.inspect [eval: Tool.pp(right), mgu: mguv]
     {s, _m} = Code.eval_quoted(Tool.pp(exp), mguv)
-#    IO.inspect [eval: s, m: _m]
+    IO.inspect [eval: s, m: _m]
     if (s != true) do
       {s, nil, mgu}
     else
@@ -32,7 +32,20 @@ defmodule Builtin do
   end
   def eval({:_fun, :=, [left, right]}, mgu) do
 #    IO.inspect [right: right]
-    mguv = Enum.map(mgu, fn({{:_var, x}, v}) -> {x, v} end)
+    {s, mmgu} = Macro.prewalk(right, 
+                              [], 
+                              fn (t = {v, m, nil}, a) ->
+                                case Map.get(mgu, {:_var, "#{v}"}) do
+                                  nil ->
+                                    {t, a}
+                                  n ->
+                                    {t, [{:v, n}|a]}
+                                end
+                                 (x, a) ->
+                                {x, a}
+                              end)
+#    mguv = Enum.map(mgu, fn({{:_var, x}, v}) -> {:"#{x}", v} end)
+    mguv = mmgu
 #   IO.inspect [right2: Tool.pp(right), mgu: mguv]
 #    IO.inspect [eval: Tool.pp(right), mgu: mguv]
     {s, _m} = Code.eval_quoted(Tool.pp(right), mguv)

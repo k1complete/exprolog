@@ -9,9 +9,9 @@ defmodule Tool do
       Tool.do_pp(unquote(a))
     end
   end
-  def do_pp({:_var, arg}) when is_atom(arg) do
+  def do_pp({:_var, arg}) when is_binary(arg) do
 #    {:_var, arg}
-      {arg, [], nil}
+      {:"#{arg}", [], nil}
   end
   def do_pp({:_fun, :_list, arg}) do
     pp(arg)
@@ -88,25 +88,25 @@ defmodule Tool do
 #    IO.inspect [nothing: [arg: a]]
     a
   end
-  def depp([]) do
+  def parse([]) do
     []
   end
-  def depp([{:|, _meta, [a,b]}]) do
-    [depp(a)|depp(b)]
+  def parse([{:|, _meta, [a,b]}]) do
+    [parse(a)|parse(b)]
   end
-  def depp([h|t]) do
-    [depp(h)|depp(t)]
+  def parse([h|t]) do
+    [parse(h)|parse(t)]
   end
-  def depp({f, _meta, nil}) do
-    {:_var, f}
+  def parse({f, _meta, nil}) do
+    {:_var, "#{f}"}
   end
-  def depp({f, _meta, atom}) when is_atom(atom) do
-    {:_var, f}
+  def parse({f, _meta, atom}) when is_atom(atom) do
+    {:_var, "#{f}"}
   end
-  def depp({f, _meta, args}) do
-    {:_fun, depp(f), depp(args)}
+  def parse({f, _meta, args}) do
+    {:_fun, parse(f), parse(args)}
   end
-  def depp(x) do
+  def parse(x) do
     x
   end
   def replace_mgu(mgu, x, mmgu) when is_map(mgu) do
