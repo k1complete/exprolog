@@ -84,19 +84,20 @@ defmodule Unification do
 #        IO.inspect [m: :not_exists1, t1: t1, t2: t2, s: s, ret: ret]
         {ret, s} = replace(ret, s, t1, t2)
 #        IO.inspect [m2: :after, ret: ret, s: s]
-        ret = [{t1, t2}|ret]
+        ret = Map.put(ret, t1, t2);
       is_variable(t2) and not_exists(t2, t1) ->
 #        IO.inspect [m: :not_exists2, t1: t1, t2: t2, s: s]
         {ret, s} = replace(ret, s, t2, t1)
-        ret = [{t2, t1}|ret]
+        ret = Map.put(ret, t2, t1)
       t1 === t2 ->
         ret
       true ->
         case iis_function(t1, t2) do
           {:_list, [th1|tl1], [th2|tl2]} ->
-            s = [{th1, th2}, {tl1, tl2} | s]
+            s = Stack.push(s, {tl1, tl2})
+            s = Stack.push(s, {th1, th2})
           {_f, tt1, tt2} ->
-            s = [{tt1, tt2}|s]
+            s = Stack.push(s, {tt1, tt2})
 #            IO.inspect [iis_function: s]
             s
           _x -> 
@@ -108,7 +109,7 @@ defmodule Unification do
     do_unification(s, ret, failure)
   end
   def unification({t1, t2}) do
-    ret = []
+    ret = %{}
     s = Stack.new
     s = Stack.push(s, {t1, t2})
     failure = false

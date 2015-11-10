@@ -1,4 +1,5 @@
 defmodule Exprolog do
+
 @doc """
 p1 = {{:_fun, :append, [[], :Y, :Y]}, []}
 p2 = {{:_fun, :append, [[:X|:Xs], :Y, [:X |:Zs]]}, [{:_fun, :append, [:Xs, :Y, :Zs]}]}
@@ -39,6 +40,31 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     walker(x, ff)
   end
   @doc """
+  trace
+  """
+  def trace(t) do
+    require Logger;
+    Logger.info(t)
+  end
+  @doc """
+  cut operator
+  """
+  def do_cut(cp) do
+    case cp do
+      [_cph | cpt] ->
+        cp = cpt
+        Cps.set_choose_stack(cpt)
+      [] ->
+        Cps.set_choose_stack([])
+        cp = []
+    end
+    cp
+  end
+  def do_atomic(a) do
+    is_atom(a)
+  end
+
+  @doc """
   prog: rule list
   gm: original query goal
   g: current sub goal list
@@ -48,8 +74,6 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   def_ do_interprete(prog, gm, g, de, mg, cp) do
 #    IO.inspect [g: g, de: de]
     case de do
-      nil ->
-        values_([status3: true, gm: gm, mgu: mg])
       [] ->
         {_, v} = Tool.walker2(gm, 
                          fn ({:_var, _a} = arg, ac) -> 
@@ -74,55 +98,44 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
               {_mgus, true} -> 
 #                IO.inspect [unif: d, dt: dt, head: head, body: body]
                 case d do
-                  {:_fun, :cut, []} ->
-#                    IO.inspect [dt: dt, body: body, cp: cp]
-                    cph = []
-                    case cp do
-                      [cph | cpt] ->
-                        cp = cpt
-#                        IO.inspect [set_stack: cph]
-                        Cps.set_choose_stack(cph)
-                      [] ->
-                        Cps.set_choose_stack([])
-                        cp = []
+                  {:_fun, f, arg} ->
+                    if (Enum.find(Builtin.__info__(:functions), 
+                              &(&1 == {f, length(arg)}))) do
+                      case apply(Builtin, f, arg) do
+                        true ->
+                          do_interprete(prog, gm, g, dt, mg, cp)
+                        false ->
+                          fail()
+                      end
+                    else
+                      fail()
                     end
-                    IO.inspect "cut!!!!\n"
+                  {:_fun, :cut, []} ->
+                    cp = do_cut(cp)
                     d0 = dt
-                    IO.inspect [cp: cph, dt: dt, g: g]
                     do_interprete(prog, gm, g, d0, mg, cp)
                   {:_fun, :fail, []} ->
-                    IO.inspect [s: "fail!!!!\n", d: d, dt: dt]
+                    trace [s: "fail!!!!\n", d: d, dt: dt]
                     fail()
-#                    values_([status: false, query: Tool.pp(gm), 
-#                             answer: [],
-#                             goal: Tool.pp(g)])
                   _ ->
-#                    IO.inspect [fail_: d, head: head, cp: cp]
                     fail()
                 end
               {mgus, false} ->
                 cp = save_choose_point(p,cp, {:_fun, :cut, []})
-#                IO.inspect [unif: true, d: d, head: head, mgus: mgus]
-#                IO.inspect [save: cp, dt: dt, body: body]
                 case body do
                   [:elixir] ->
-#                    IO.inspect [prog: {head, body}, d: d]
-                    {_d2, _head, mg} = Builtin.eval(d, mg)
-                  #                mg2 = Dict.to_list(mg)
+                    {_d2, _head, mg} = Builtin.Elixir.eval(d, mg)
                     dt = Tool.assignment(dt, mg)
-#                  IO.inspect [dt: dt]
                     d0 = dt
                   _ ->
                     body = Enum.map(body, &(renaming(&1, seed)))
-#                    IO.inspect [rename: {head, body}]
                     d0 = body ++ dt
                 end
                 d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
                 g0 = Tool.assignment(g, mgus)
-                mgus = Enum.into(mgus, %{})
+#                mgus = Enum.into(mgus, %{})
                 mg = Enum.into(mg, %{})
                 m0 = Dict.merge(mgus,  mg)
-#                IO.inspect [pre_do: d0, m0: m0]
                 do_interprete(prog, gm, g0, d0, m0, cp)
             end
           end
@@ -131,7 +144,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   def interprete(prog, goal, bind) do
     use_cont
     goal2 = Tool.assignment(goal, bind)
-#    IO.inspect [A: Tool.pp(goal2), prog: prog]
+    IO.inspect [A: Tool.pp(goal2), prog: prog]
     do_interprete(prog, goal2, goal2, [goal2], [], [])
   end
   defmacro interprete(goal, bind \\ []) do

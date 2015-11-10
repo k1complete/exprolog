@@ -63,6 +63,9 @@ defmodule Tool do
 #    IO.inspect [nothing: [arg: a]]
     {a, ac}
   end
+  def walker(map, f) when is_map(map) do
+    Enum.into(Enum.map(map, &(walker(&1, f))), %{})
+  end
   def walker([], _ff) do
     []
   end
