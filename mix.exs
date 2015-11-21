@@ -1,10 +1,10 @@
-defmodule Exlog.Mixfile do
+defmodule Exprolog.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :exlog,
+    [app: :exprolog,
      version: "0.0.1",
-     elixir: "~> 1.1.0-beta",
+     elixir: "~> 1.2.0-beta",
      deps: deps]
   end
 

@@ -1,5 +1,7 @@
 defmodule Exprolog do
 
+@prolog :prolog
+
 @doc """
 p1 = {{:_fun, :append, [[], :Y, :Y]}, []}
 p2 = {{:_fun, :append, [[:X|:Xs], :Y, [:X |:Zs]]}, [{:_fun, :append, [:Xs, :Y, :Zs]}]}
@@ -72,7 +74,6 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   cp: choose point
   """
   def_ do_interprete(prog, gm, g, de, mg, cp) do
-#    IO.inspect [g: g, de: de]
     case de do
       [] ->
         {_, v} = Tool.walker2(gm, 
@@ -88,7 +89,14 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                  answer: Tool.pp(v),
                  goal: Tool.pp(g)])
       [d|dt] ->
-        choose_bind prog,
+        pclause = case get_clause(@prolog, d) do
+                    [{h, pclause}] -> 
+                      pclause
+                    [] ->
+                      [{{:_fun, :true, []}, []}]
+                  end
+#        IO.inspect [clause: pclause, d: d, dt: dt]
+        choose_bind pclause,
           fn(p) ->
             {head, body} = p
             seed = make_seed()
@@ -98,36 +106,38 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
               {_mgus, true} -> 
 #                IO.inspect [unif: d, dt: dt, head: head, body: body]
                 case d do
-                  {:_fun, f, arg} ->
-                    if (Enum.find(Builtin.__info__(:functions), 
-                              &(&1 == {f, length(arg)}))) do
-                      case apply(Builtin, f, arg) do
-                        true ->
-                          do_interprete(prog, gm, g, dt, mg, cp)
-                        false ->
-                          fail()
-                      end
-                    else
-                      fail()
-                    end
                   {:_fun, :cut, []} ->
                     cp = do_cut(cp)
                     d0 = dt
+                    trace "cut!!!!\n"
                     do_interprete(prog, gm, g, d0, mg, cp)
                   {:_fun, :fail, []} ->
-                    trace [s: "fail!!!!\n", d: d, dt: dt]
+                    trace "fail!!!!\n"
                     fail()
                   _ ->
+#                    trace "fail!!!!\n"
                     fail()
                 end
               {mgus, false} ->
                 cp = save_choose_point(p,cp, {:_fun, :cut, []})
                 case body do
                   [:elixir] ->
+#                    IO.inspect [eval: d]
                     {_d2, _head, mg} = Builtin.Elixir.eval(d, mg)
                     dt = Tool.assignment(dt, mg)
                     d0 = dt
+                  [:builtin] ->
+                    IO.inspect [mgus: mgus, mg: mg, d: d, dt: dt]
+                    {:_fun, f, a} = d
+                    case apply(Builtin, f, a) do
+                      false ->
+                        d0 = [{:_fun, :fail, []}|dt]
+                      true ->
+                        IO.inspect [tmgus: mgus, mg: mg, d: d, dt: dt]
+                        d0 = dt
+                    end
                   _ ->
+#                    IO.inspect [body: body]
                     body = Enum.map(body, &(renaming(&1, seed)))
                     d0 = body ++ dt
                 end
@@ -151,7 +161,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
     bind = Enum.map(bind, fn({k,v}) ->
                             {{:_var, k}, v} 
                     end)
-    p = :ets.match(:prolog, :"$1") |> Enum.map(&(hd(&1)))|> Macro.escape
+    p = :ets.match(@prolog, :"$1") |> Enum.map(&(hd(&1)))|> Macro.escape
 #    IO.inspect [p: p]
     quote  do
       g = defquery(unquote(goal))
@@ -177,15 +187,34 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
       cp
     end
   end
-  @prolog :prolog
-  def register_rule(ets, term) do
+  def register_rule(ets, term = {callarity, {call, body}}) do
     m = try do
-          :ets.new(ets, [:duplicate_bag, :public, :named_table])
+          :ets.new(ets, [:set, :public, :named_table])
           rescue 
           ArgumentError ->
             ets
         end
-    :ets.insert(m,term)
+    case :ets.lookup(m, callarity) do
+      [] ->
+        :ets.insert(m, {callarity, [{call, body}]})
+      [{callarity, objs}] ->
+        :ets.insert(m, {callarity, objs ++ [{call, body}]})
+    end
+  end
+  def get_clause(ets, call) do
+    {f, arity} = get_call_arity(call)
+    :ets.lookup(ets, {f, arity})
+  end
+  def get_call_arity(call) do
+#    IO.inspect [call: call]
+    case call do
+      {:_fun, f, args} ->
+        {f, length(args)}
+      true ->
+        {:true, 0}
+      x ->
+        x
+    end
   end
   defmacro defrule(call, clause \\ [ do: nil ]) do
     call = Tool.parse(call)
@@ -198,7 +227,8 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                Tool.parse([exp])
            end
 #    IO.inspect [call: call, clause: body]
-    Macro.escape(register_rule(@prolog, {call, body}))
+    call_arity = get_call_arity(call)
+    Macro.escape(register_rule(@prolog, {call_arity, {call, body}}))
   end
   defmacro deffact(call) do
     quote do
@@ -222,31 +252,5 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                              {:_var, :Y}, 
                              {:_var, :Zs}]}]}
     [p1, p2]
-  end
-  def test do
-    p3 = test_prog()
-    Exprolog.interprete(p3, {:_fun, :append, [[1], [2], [1,2]]})
-  end
-  def test2 do
-    p3 = test_prog()
-    Exprolog.interprete(p3, {:_fun, :append, [[1],[2],{:_var, :Y}]})
-  end
-  def test3 do
-    p3 = test_prog()
-    Exprolog.interprete(p3, {:_fun, :append, 
-                             [{:_var, :X},
-                              {:_var, :Y},
-                              [1,2,3]]})
-  end
-  def test35 do
-    p3 = test_prog()
-    Exprolog.interprete(p3, {:_fun, :append, 
-                             [{:_var, :X},
-                              {:_var, :Y},
-                              [1,2]]})
-  end
-  def test4 do
-    p3 = :ets.match(@prolog, :"$1") |> Enum.map(&(hd(&1))) 
-    Exprolog.interprete(p3, {:_fun, :append, [{:_var, :x}, {:_var, :y}, [1,2]]})
   end
 end

@@ -1,4 +1,5 @@
 use Exprolog
+Builtin.init()
 deffact true
 deffact :elixir
 defrule x = y do
