@@ -1,6 +1,6 @@
 defmodule ExlogTest do
   use ExUnit.Case
-  doctest Exlog
+  doctest Exprolog
 
   test "the truth" do
     assert 1 + 1 == 2

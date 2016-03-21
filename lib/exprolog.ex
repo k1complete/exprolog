@@ -65,7 +65,6 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
   def do_atomic(a) do
     is_atom(a)
   end
-
   @doc """
   prog: rule list
   gm: original query goal
@@ -90,7 +89,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                  goal: Tool.pp(g)])
       [d|dt] ->
         pclause = case get_clause(@prolog, d) do
-                    [{h, pclause}] -> 
+                    [{_h, pclause}] -> 
                       pclause
                     [] ->
                       [{{:_fun, :true, []}, []}]
@@ -102,6 +101,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
             seed = make_seed()
             head = renaming(head, seed)
 #            IO.inspect [unif_before: d]
+            d0 = nil
             case Unification.unification({d, head}) do
               {_mgus, true} -> 
 #                IO.inspect [unif: d, dt: dt, head: head, body: body]
@@ -138,12 +138,13 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
                     end
                   _ ->
 #                    IO.inspect [body: body]
-                    body = Enum.map(body, &(renaming(&1, seed)))
+#                    body = Enum.map(body, &(renaming(&1, seed)))
+                    body = renaming(body, seed)
                     d0 = body ++ dt
                 end
                 d0 = Enum.map(d0, &(Tool.assignment(&1, mgus)))
                 g0 = Tool.assignment(g, mgus)
-#                mgus = Enum.into(mgus, %{})
+                mgus = Enum.into(mgus, %{})
                 mg = Enum.into(mg, %{})
                 m0 = Dict.merge(mgus,  mg)
                 do_interprete(prog, gm, g0, d0, m0, cp)
@@ -187,7 +188,7 @@ Exprolog.interprete(p3, {{:_fun, :append, [[1],[2],:Y]}})
       cp
     end
   end
-  def register_rule(ets, term = {callarity, {call, body}}) do
+  def register_rule(ets, {callarity, {call, body}}) do
     m = try do
           :ets.new(ets, [:set, :public, :named_table])
           rescue 

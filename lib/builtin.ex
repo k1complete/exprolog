@@ -1,6 +1,6 @@
 defmodule Builtin do
   use Exprolog
-  defmacro __using__(opt \\[]) do
+  defmacro __using__(_opt \\[]) do
     quote do
       defrule atom(a), do: :builtin
       defrule integer(a), do: :builtin

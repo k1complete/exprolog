@@ -81,7 +81,7 @@ defmodule Tool do
     ff.({:_var, a})
   end
   def walker(tuple, ff) when is_tuple(tuple) do
-    List.to_tuple(walker(Tuple.to_list(tuple), ff))
+    List.to_tuple(Enum.map(Tuple.to_list(tuple), &(walker(&1, ff))))
   end
   def walker(a, ff) when is_atom(a) do
     r = ff.(a)
