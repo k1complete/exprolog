@@ -66,13 +66,13 @@ Example:
 Introduction
 -------------
 
-*** What is Exprolog?
+## What is Exprolog?
 
 Prolog is a logic programming language based on first-order predicate
 logic.  Exprolog is a domain specific language for logic programming
 built top of Elixir.
 
-*** Logic programming language?
+## Logic programming language?
 
 first-order predicate logic is completeness, and noncontradiction.
 
@@ -80,7 +80,7 @@ first-order predicate logic is completeness, and noncontradiction.
 References
 -----------
 
-*** Syntax
+## Syntax
 
     RULE:: FACT | RULE
     
@@ -110,7 +110,7 @@ References
     TERM:: Atom | Number |List | Tuple | Var | EXP
     NL:: '\n'
 
-*** Builtin
+## Builtin
 
     atom/1 
     integer/1
@@ -120,7 +120,7 @@ References
     var/1
     true/0
 
-*** Pure Prolog
+## Pure Prolog
 
     0
     s(0)
@@ -128,7 +128,7 @@ References
     natural_number/1
     times/3
 
-*** Core Library
+## Core Library
 
     append/3
     member/2
