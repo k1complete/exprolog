@@ -54,14 +54,15 @@ defrule q8(s) do
   target_area(s)
   solve(s)
 end
+defrule q8_sub([], q, q)
+
 defrule q8_sub(l, xs, q) do
   select(x, l, restq)
   not_reachable(x, xs)
   q8_sub(restq, [x|xs], q)
 end
-defrule q8_sub([], q, q)
 
 defrule q8e(s) do
   q8_sub([1,2,3,4,5,6,7,8], [], s)
 end
-interprete(q8e(s))
+

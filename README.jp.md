@@ -1,22 +1,23 @@
 Exprolog
 =========
 
-Exprolog is a logic programming language(DSL) like Prolog
-built on top of Elixir.
+Exprolog はElixirの上に実装されたPrologライクな論理型プログラミング言語
+(DSL)です。
+
 
 Build
 ------
 
-Exprlog is no dependency.
+Exprlogは依存ライブラリはありません。
 
 % mix 
 
 Using on iex
 ------------
 
-You must 'use Exprlog' on iex.
+iexで使うには、`use Exprolog`します。
 
-Example:
+例:
 
 $ iex -S mix
 Eshell V8.0  (abort with ^G)
@@ -58,10 +59,6 @@ fail()
  goal: {:append, [], [[1, 2, 3], [], [1, 2, 3]]}]
 iex(10)> fail() ## more ?
 nil
-iex(11)> Exprolog.interprete(append(a, b, c), [{"a", [1,2]}, {"b", [3]}])
-[status: true, query: {:append, [], [[1, 2], [3], {:_var, "c"}]},
- answer: [{"c", [1, 2, 3]}], goal: {:append, [], [[1, 2], [3], [1, 2, 3]]}]
-iex(12)> 
 
 Introduction
 -------------
@@ -137,4 +134,3 @@ select/3
 permutation/2
 partition/4
 append_dl/3
-

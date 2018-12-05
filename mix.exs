@@ -4,8 +4,8 @@ defmodule Exprolog.Mixfile do
   def project do
     [app: :exprolog,
      version: "0.0.1",
-     elixir: "~> 1.2.0-beta",
-     deps: deps]
+     elixir: "~> 1.3",
+     deps: deps()]
   end
 
   # Configuration for the OTP application
